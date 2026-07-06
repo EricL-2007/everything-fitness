@@ -1,0 +1,15 @@
+{
+  "expo": {
+    "name": "Everything Fitness",
+    "slug": "everything-fitness",
+    "version": "1.0.0",
+    "scheme": "everythingfitness",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "ios": { "supportsTablet": true, "bundleIdentifier": "com.ericl.everythingfitness" },
+    "android": { "package": "com.ericl.everythingfitness", "edgeToEdgeEnabled": true },
+    "web": { "bundler": "metro", "output": "single", "favicon": "./assets/favicon.png" },
+    "plugins": ["expo-router", "expo-font"]
+  }
+}
