@@ -81,3 +81,4 @@ supabase/
 
 v1 (this) → v2 (LLM Coach Er, photo food logging, barcode scanning, adaptive
 splits, premium) → v3 (personalization, community) → v3.5 (cardio) → v4 (fitness RPG).
+# everything-fitness
