@@ -107,12 +107,6 @@ supabase/
   designed to be public. Secrets like the USDA key live in Edge Function secrets,
   never in the repo.
 
-## Roadmap
-
-v1 (this) → v2 (LLM-powered Coach Er, photo food logging, barcode scanning,
-adaptive splits, premium paywall) → v3 (deeper personalization, community) →
-v3.5 (cardio) → v4 (fitness RPG).
-
 ## Status
 
 v1 is feature-complete and runs on web, iOS, and Android via Expo. App Store /
