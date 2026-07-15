@@ -3,7 +3,7 @@
 import React from "react";
 import { Text, View } from "react-native";
 import Svg, { Circle } from "react-native-svg";
-import { colors, type } from "../lib/theme";
+import { type, useTheme } from "../lib/theme";
 
 function Arc({ r, stroke, progress, size, width }: {
   r: number; stroke: string; progress: number; size: number; width: number;
@@ -27,6 +27,7 @@ export default function TodayRing({ kcal, kcalTarget, protein, proteinTarget, ca
   carbs: number; carbsTarget: number;
   fat: number; fatTarget: number;
 }) {
+  const { colors } = useTheme();
   const size = 220;
   const over = kcal > kcalTarget;
   return (
@@ -54,6 +55,7 @@ export default function TodayRing({ kcal, kcalTarget, protein, proteinTarget, ca
 export function MacroLegend({ protein, proteinTarget, carbs, carbsTarget, fat, fatTarget }: {
   protein: number; proteinTarget: number; carbs: number; carbsTarget: number; fat: number; fatTarget: number;
 }) {
+  const { colors } = useTheme();
   const Item = ({ dot, name, val, target }: { dot: string; name: string; val: number; target: number }) => (
     <View style={{ alignItems: "center", flex: 1 }}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>

@@ -3,9 +3,10 @@ import { useCallback, useState } from "react";
 import { Alert, Platform, Pressable, Text, View } from "react-native";
 import { useSession } from "../_layout";
 import { Button, Card, H1, Input, Label, Pills, Screen } from "../../components/UI";
+import { LANGS, useT } from "../../lib/i18n";
 import { fmtWeight, kgToLb, lbToKg, splitLabelOf, SPLITS, SplitId } from "../../lib/fitness";
 import { supabase } from "../../lib/supabase";
-import { colors, type } from "../../lib/theme";
+import { Scheme, type, useTheme } from "../../lib/theme";
 import { touchStreak } from "../../lib/useToday";
 
 const notify = (msg: string) =>
@@ -13,6 +14,8 @@ const notify = (msg: string) =>
 
 export default function Profile() {
   const { session, profile, refreshProfile } = useSession();
+  const { colors, scheme, setScheme } = useTheme();
+  const { t, lang, setLang } = useT();
   const router = useRouter();
   const uid = session!.user.id;
   const units = profile?.units ?? "imperial";
@@ -36,7 +39,7 @@ export default function Profile() {
 
   useFocusEffect(useCallback(() => { loadData(); }, [loadData]));
 
-  if (!profile) return <Screen><Text style={{ color: colors.steel }}>Loading…</Text></Screen>;
+  if (!profile) return <Screen><Text style={{ color: colors.steel }}>{t("common.loading")}</Text></Screen>;
 
   const logWeight = async () => {
     const kg = units === "imperial" ? lbToKg(Number(weightInput)) : Number(weightInput);
@@ -93,6 +96,12 @@ export default function Profile() {
     refreshProfile();
   };
 
+  const setTrainingMode = async (m: "gym" | "home") => {
+    const { error } = await supabase.from("profiles").update({ training_mode: m }).eq("id", uid);
+    if (error) return notify(`Couldn't update training mode: ${error.message}`);
+    refreshProfile();
+  };
+
   const trend = weights.length >= 2
     ? Number(weights[0].weight_kg) - Number(weights[weights.length - 1].weight_kg)
     : 0;
@@ -112,25 +121,25 @@ export default function Profile() {
 
       {/* Daily targets */}
       <Card style={{ marginTop: 16 }}>
-        <Text style={{ fontFamily: type.displayMed, color: colors.ink }}>Daily targets</Text>
+        <Text style={{ fontFamily: type.displayMed, color: colors.ink }}>{t("profile.dailyTargets")}</Text>
         <Text style={{ color: colors.steel, marginTop: 6, lineHeight: 20 }}>
           {profile.calorie_target} kcal · {profile.protein_target_g} g protein ·{" "}
           {profile.carbs_target_g} g carbs · {profile.fat_target_g} g fat ·{" "}
           {(profile.water_target_ml / 1000).toFixed(1)} L water
         </Text>
         <Text style={{ color: colors.steel, fontSize: 12, marginTop: 6 }}>
-          Goal: {String(profile.goal).replace("_", " ")} — targets recompute when you log a new weight.
+          {t("profile.goalLabel", { goal: String(profile.goal).replace("_", " ") })}
         </Text>
       </Card>
 
       {/* Body weight */}
-      <Label>Body weight</Label>
+      <Label>{t("profile.bodyWeight")}</Label>
       <Card>
         <View style={{ flexDirection: "row", gap: 8 }}>
           <Input value={weightInput} onChangeText={setWeightInput} keyboardType="decimal-pad"
             placeholder={units === "imperial" ? `${kgToLb(Number(profile.weight_kg)).toFixed(1)} lb` : `${Number(profile.weight_kg).toFixed(1)} kg`}
             style={{ flex: 1 }} />
-          <Button title="Log" onPress={logWeight} />
+          <Button title={t("profile.log")} onPress={logWeight} />
         </View>
         {weights.length > 0 && (
           <View style={{ marginTop: 12 }}>
@@ -142,7 +151,7 @@ export default function Profile() {
             ))}
             {weights.length >= 2 && (
               <Text style={{ color: trend <= 0 ? colors.mint : colors.amber, marginTop: 6, fontSize: 13 }}>
-                {trend <= 0 ? "▼" : "▲"} {fmtWeight(Math.abs(trend), units)} over the last {weights.length} entries
+                {t("profile.trend", { arrow: trend <= 0 ? "▼" : "▲", amount: fmtWeight(Math.abs(trend), units), n: weights.length })}
               </Text>
             )}
           </View>
@@ -150,9 +159,9 @@ export default function Profile() {
       </Card>
 
       {/* Active plan summary */}
-      <Label>Workout split</Label>
+      <Label>{t("profile.workoutSplit")}</Label>
       <Card style={{ marginBottom: 4 }}>
-        <Text style={{ color: colors.steel, fontSize: 12 }}>Active</Text>
+        <Text style={{ color: colors.steel, fontSize: 12 }}>{t("profile.active")}</Text>
         <Text style={{ fontFamily: type.displayMed, color: colors.ink, marginTop: 2 }}>
           {splitLabelOf(profile)}
         </Text>
@@ -164,16 +173,14 @@ export default function Profile() {
 
       {/* Custom plans */}
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 20, marginBottom: 6 }}>
-        <Text style={{ color: colors.steel, fontSize: 13 }}>Your custom plans</Text>
+        <Text style={{ color: colors.steel, fontSize: 13 }}>{t("profile.yourPlans")}</Text>
         <Pressable onPress={() => router.push("/plan-builder")}>
-          <Text style={{ color: colors.cobalt, fontFamily: type.displayMed, fontSize: 14 }}>＋ Create plan</Text>
+          <Text style={{ color: colors.cobalt, fontFamily: type.displayMed, fontSize: 14 }}>{t("profile.createPlan")}</Text>
         </Pressable>
       </View>
       {plans.length === 0 ? (
         <Card>
-          <Text style={{ color: colors.steel, fontSize: 13 }}>
-            No custom plans yet. Tap “Create plan” to build your own week.
-          </Text>
+          <Text style={{ color: colors.steel, fontSize: 13 }}>{t("profile.noPlans")}</Text>
         </Card>
       ) : (
         <Card>
@@ -188,10 +195,10 @@ export default function Profile() {
                   </Text>
                 </View>
                 {active ? (
-                  <Text style={{ color: colors.mint, fontFamily: type.displayMed, fontSize: 13 }}>Active ✓</Text>
+                  <Text style={{ color: colors.mint, fontFamily: type.displayMed, fontSize: 13 }}>{t("profile.active")} ✓</Text>
                 ) : (
                   <Pressable onPress={() => useCustomPlan(p)} style={{ paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1, borderColor: colors.cobalt, borderRadius: 999 }}>
-                    <Text style={{ color: colors.cobalt, fontSize: 13 }}>Use</Text>
+                    <Text style={{ color: colors.cobalt, fontSize: 13 }}>{t("profile.use")}</Text>
                   </Pressable>
                 )}
                 <Pressable onPress={() => deletePlan(p)} hitSlop={8} style={{ marginLeft: 10 }}>
@@ -203,25 +210,41 @@ export default function Profile() {
         </Card>
       )}
 
-      <Label>Units</Label>
+      <Label>{t("profile.units")}</Label>
       <Pills options={["imperial", "metric"] as const} value={units} onChange={setUnits}
         labels={{ imperial: "lb / ft", metric: "kg / cm" }} />
+
+      {/* Preferences: language, appearance, training mode */}
+      <Label>{t("profile.preferences")}</Label>
+      <Card style={{ gap: 4 }}>
+        <Text style={{ color: colors.steel, fontSize: 13, marginBottom: 6 }}>{t("profile.language")}</Text>
+        <Pills options={LANGS.map((l) => l.id)} value={lang} onChange={setLang}
+          labels={Object.fromEntries(LANGS.map((l) => [l.id, l.label])) as any} />
+
+        <Text style={{ color: colors.steel, fontSize: 13, marginTop: 16, marginBottom: 6 }}>{t("profile.appearance")}</Text>
+        <Pills options={["light", "dark"] as Scheme[]} value={scheme} onChange={setScheme}
+          labels={{ light: t("profile.light"), dark: t("profile.dark") }} />
+
+        <Text style={{ color: colors.steel, fontSize: 13, marginTop: 16, marginBottom: 6 }}>{t("profile.trainingMode")}</Text>
+        <Pills options={["gym", "home"] as const} value={profile.training_mode ?? "gym"} onChange={setTrainingMode}
+          labels={{ gym: t("workout.gym"), home: t("workout.home") }} />
+      </Card>
 
       {/* Redeem code */}
       {!profile.premium_forever && (
         <>
-          <Label>Redeem code</Label>
+          <Label>{t("profile.redeemCode")}</Label>
           <Card>
             <View style={{ flexDirection: "row", gap: 8 }}>
               <Input value={code} onChangeText={setCode} autoCapitalize="characters"
-                placeholder="Enter code" style={{ flex: 1 }} />
-              <Button title={redeeming ? "…" : "Redeem"} onPress={redeem} disabled={redeeming || !code.trim()} />
+                placeholder={t("profile.enterCode")} style={{ flex: 1 }} />
+              <Button title={redeeming ? t("profile.redeeming") : t("profile.redeem")} onPress={redeem} disabled={redeeming || !code.trim()} />
             </View>
           </Card>
         </>
       )}
 
-      <Button title="Sign out" kind="danger" onPress={() => supabase.auth.signOut()} />
+      <Button title={t("common.signOut")} kind="danger" onPress={() => supabase.auth.signOut()} />
     </Screen>
   );
 }

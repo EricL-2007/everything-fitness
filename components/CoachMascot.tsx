@@ -3,12 +3,13 @@
 // on-brand. `mood` lightly changes the expression.
 import Svg, { Circle, Path, Rect } from "react-native-svg";
 import { View } from "react-native";
-import { colors } from "../lib/theme";
+import { useTheme } from "../lib/theme";
 
 export default function CoachMascot({ size = 72, mood = "happy" }: {
   size?: number;
   mood?: "happy" | "push" | "chill";
 }) {
+  const { colors } = useTheme();
   return (
     <View style={{ width: size, height: size }}>
       <Svg viewBox="0 0 100 100" width={size} height={size}>

@@ -3,15 +3,18 @@ import { useState } from "react";
 import { Platform, Pressable, Alert, Text, View } from "react-native";
 import { useSession } from "./_layout";
 import { Button, Card, H1, Input, Label, Screen } from "../components/UI";
+import { useT } from "../lib/i18n";
 import { CUSTOM_DAY_OPTIONS } from "../lib/fitness";
 import { supabase } from "../lib/supabase";
-import { colors, type } from "../lib/theme";
+import { type, useTheme } from "../lib/theme";
 
 const notify = (msg: string) =>
   Platform.OS === "web" ? window.alert(msg) : Alert.alert("Everything Fitness", msg);
 
 export default function PlanBuilder() {
   const { session, refreshProfile } = useSession();
+  const { colors } = useTheme();
+  const { t } = useT();
   const uid = session!.user.id;
   const router = useRouter();
 
@@ -49,25 +52,24 @@ export default function PlanBuilder() {
     <Screen>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
         <Pressable onPress={() => router.back()} hitSlop={10}>
-          <Text style={{ color: colors.cobalt, fontSize: 16 }}>‹ Back</Text>
+          <Text style={{ color: colors.cobalt, fontSize: 16 }}>{t("planBuilder.back")}</Text>
         </Pressable>
       </View>
-      <H1>Build a plan</H1>
+      <H1>{t("planBuilder.title")}</H1>
       <Text style={{ color: colors.steel, marginTop: 4 }}>
-        Set each day of your week. Tap a day to change it — the plan advances one day
-        every time you finish a session.
+        {t("planBuilder.subtitle")}
       </Text>
 
-      <Label>Plan name</Label>
-      <Input value={name} onChangeText={setName} placeholder="e.g. My PPL + Arms" />
+      <Label>{t("planBuilder.planName")}</Label>
+      <Input value={name} onChangeText={setName} placeholder={t("planBuilder.planNamePlaceholder")} />
 
-      <Label>Your week</Label>
+      <Label>{t("planBuilder.yourWeek")}</Label>
       <Card>
         {days.map((d, i) => (
           <View key={i}>
             <Pressable onPress={() => setEditing(editing === i ? null : i)}
               style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 12, borderBottomWidth: i < 6 ? 1 : 0, borderBottomColor: colors.line }}>
-              <Text style={{ color: colors.steel, fontSize: 13 }}>Day {i + 1}</Text>
+              <Text style={{ color: colors.steel, fontSize: 13 }}>{t("planBuilder.day", { n: i + 1 })}</Text>
               <Text style={{ color: d === "Rest" ? colors.steel : colors.ink, fontFamily: type.displayMed }}>
                 {d} {d === "Rest" ? "😴" : ""}
               </Text>
@@ -79,7 +81,7 @@ export default function PlanBuilder() {
                   return (
                     <Pressable key={opt} onPress={() => setDay(i, opt)}
                       style={{ borderWidth: 1, borderColor: active ? colors.ink : colors.line, backgroundColor: active ? colors.ink : colors.card, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7 }}>
-                      <Text style={{ color: active ? "#fff" : colors.ink, fontSize: 13 }}>{opt}</Text>
+                      <Text style={{ color: active ? colors.paper : colors.ink, fontSize: 13 }}>{opt}</Text>
                     </Pressable>
                   );
                 })}
@@ -89,7 +91,7 @@ export default function PlanBuilder() {
         ))}
       </Card>
 
-      <Button title={saving ? "Saving…" : "Save & use this plan"} onPress={save} disabled={saving} />
+      <Button title={saving ? t("planBuilder.saving") : t("planBuilder.save")} onPress={save} disabled={saving} />
     </Screen>
   );
 }

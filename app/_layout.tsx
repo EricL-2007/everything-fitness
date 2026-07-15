@@ -5,7 +5,8 @@ import { StatusBar } from "expo-status-bar";
 import { createContext, useContext, useEffect, useState } from "react";
 import { ActivityIndicator, ScrollView, Text, View } from "react-native";
 import { supabase } from "../lib/supabase";
-import { colors, type } from "../lib/theme";
+import { type, ThemeProvider, useTheme } from "../lib/theme";
+import { LanguageProvider } from "../lib/i18n";
 
 type Profile = Record<string, any> | null;
 const SessionCtx = createContext<{ session: Session | null; profile: Profile; refreshProfile: () => void }>({
@@ -14,6 +15,17 @@ const SessionCtx = createContext<{ session: Session | null; profile: Profile; re
 export const useSession = () => useContext(SessionCtx);
 
 export default function RootLayout() {
+  return (
+    <ThemeProvider>
+      <LanguageProvider>
+        <RootLayoutInner />
+      </LanguageProvider>
+    </ThemeProvider>
+  );
+}
+
+function RootLayoutInner() {
+  const { colors, scheme } = useTheme();
   const [fontsLoaded] = useFonts({ Archivo_600SemiBold, Archivo_700Bold });
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile>(null);
@@ -106,7 +118,7 @@ export default function RootLayout() {
 
   return (
     <SessionCtx.Provider value={{ session, profile, refreshProfile }}>
-      <StatusBar style="dark" />
+      <StatusBar style={scheme === "dark" ? "light" : "dark"} />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.paper } }} />
     </SessionCtx.Provider>
   );

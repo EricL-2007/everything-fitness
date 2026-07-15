@@ -86,6 +86,19 @@ export const CUSTOM_DAY_OPTIONS = [
   "Chest & Back", "Shoulders & Arms", "Rest",
 ];
 
+// ---------- home vs. gym mode ----------
+/** Equipment considered available in "home" mode — everything else (barbell,
+ * machine, cable) needs a gym, so it's filtered out of the picker/substitutions. */
+export const HOME_EQUIPMENT = ["bodyweight", "dumbbell"];
+
+export function exercisesForMode<T extends { equipment: string }>(
+  exercises: T[],
+  mode: "gym" | "home" | undefined,
+): T[] {
+  if (mode !== "home") return exercises;
+  return exercises.filter((e) => HOME_EQUIPMENT.includes(e.equipment));
+}
+
 /** Resolve the active week for a profile — a custom plan overrides the built-in split. */
 export function splitDaysOf(profile: any): string[] {
   if (profile?.split_days?.length) return profile.split_days as string[];

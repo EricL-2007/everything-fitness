@@ -1,6 +1,7 @@
 import { Tabs } from "expo-router";
 import { Text } from "react-native";
-import { colors, type } from "../../lib/theme";
+import { useT } from "../../lib/i18n";
+import { type, useTheme } from "../../lib/theme";
 
 const icon = (glyph: string) =>
   ({ focused }: { focused: boolean }) => (
@@ -8,6 +9,8 @@ const icon = (glyph: string) =>
   );
 
 export default function TabsLayout() {
+  const { colors } = useTheme();
+  const { t } = useT();
   return (
     <Tabs
       screenOptions={{
@@ -19,11 +22,12 @@ export default function TabsLayout() {
         sceneStyle: { backgroundColor: colors.paper },
       }}
     >
-      <Tabs.Screen name="index" options={{ title: "Today", tabBarIcon: icon("◎") }} />
-      <Tabs.Screen name="nutrition" options={{ title: "Nutrition", tabBarIcon: icon("🍗") }} />
-      <Tabs.Screen name="workout" options={{ title: "Workout", tabBarIcon: icon("🏋️") }} />
-      <Tabs.Screen name="coach" options={{ title: "Coach Er", tabBarIcon: icon("💬") }} />
-      <Tabs.Screen name="profile" options={{ title: "Profile", tabBarIcon: icon("👤") }} />
+      <Tabs.Screen name="index" options={{ title: t("tabs.today"), tabBarIcon: icon("◎") }} />
+      <Tabs.Screen name="nutrition" options={{ title: t("tabs.nutrition"), tabBarIcon: icon("🍗") }} />
+      <Tabs.Screen name="workout" options={{ title: t("tabs.workout"), tabBarIcon: icon("🏋️") }} />
+      <Tabs.Screen name="coach" options={{ title: t("tabs.coach"), tabBarIcon: icon("💬") }} />
+      <Tabs.Screen name="progress" options={{ title: t("tabs.progress"), tabBarIcon: icon("📈") }} />
+      <Tabs.Screen name="profile" options={{ title: t("tabs.profile"), tabBarIcon: icon("👤") }} />
     </Tabs>
   );
 }

@@ -2,8 +2,8 @@
 
 Log it. Every day. That's the whole trick.
 
-A cross-platform fitness app — nutrition, workouts, hydration, streaks, and a
-rule-based coach (Coach Er) — built with **Expo (React Native)** and **Supabase**.
+A cross-platform fitness app — nutrition, workouts, hydration, streaks, and an
+AI-powered coach (Coach Er) — built with **Expo (React Native)** and **Supabase**.
 One codebase runs on iOS, Android, and the web.
 
 > ⚠️ Everything Fitness provides general fitness information, not medical advice.
@@ -13,9 +13,11 @@ One codebase runs on iOS, Android, and the web.
 
 - **Frontend:** React Native + Expo (expo-router), TypeScript, react-native-svg
 - **Backend:** Supabase — Postgres with Row-Level Security, Auth, Edge Functions (Deno)
+- **AI:** Claude (Anthropic API) called from a Supabase Edge Function — the API key
+  never ships in the app
 - **Platforms:** iOS, Android, and responsive web from a single codebase
 
-## v1 features
+## Features
 
 **Accounts & onboarding**
 - Email auth with auto-created profiles (self-healing if a profile row is missing)
@@ -31,18 +33,40 @@ One codebase runs on iOS, Android, and the web.
 **Workouts**
 - Built-in splits: PPL, Upper/Lower, Full Body, Bro, Arnold, PPL×Upper/Lower, PHUL, PHAT
 - **Custom plan builder** — design your own 7-day week and save multiple plans
+- **Adaptive split** — the week's rotation advances on completed sessions, not calendar
+  days; a "Skip today" action explicitly shifts the split forward when you can't train,
+  so nothing is lost or force-crammed
+- **Exercise substitutions** — swap any exercise for another that targets the same
+  muscle group, filtered to what your training mode allows
+- **Home vs. gym mode** — a profile-level toggle that filters the exercise picker and
+  substitutions down to bodyweight/dumbbell moves when you're training at home
+- **Workout mode** — rest timer with presets, a live session-duration clock, and a
+  post-workout summary (duration, sets, total volume, exercises trained)
 - Searchable, scrollable exercise picker; set / rep / weight logging
-- Rest timer with presets; the split auto-advances when you finish a session
 - Workout history
 
-**Coach Er**
+**AI Coach (Coach Er)**
 - A friendly cartoon mascot whose expression reacts to your day
-- Rule-based daily guidance: protein pacing, calorie drift, hydration nudges,
+- Rule-based daily briefing: protein pacing, calorie drift, hydration nudges,
   missed-session split shifting, and streak milestones
+- **LLM-powered chat** — ask Coach Er anything; it's backed by Claude via a Supabase
+  Edge Function so your API key never touches the client
+- **Memory** — the coach's system prompt is built from your goals, recent workout
+  history, and recent nutrition log, and the conversation itself is persisted
+  (`coach_messages`) so it picks up where you left off across app restarts
 
 **Tracking**
 - Streaks and a Today dashboard with the calorie/macro ring
 - Body-weight logging with trend
+- **Weekly report** — workouts completed, average calories/protein, and streak for
+  the last 7 days
+- **Strength progression** — a chart of your top working set over time for whichever
+  lift you train most
+
+**Language & appearance**
+- Full UI in **English, Spanish, and Chinese (Simplified)** — switch anytime in
+  Profile → Preferences (stored on-device, no account changes needed)
+- **Light / dark mode toggle** — same switch, applies instantly across every screen
 
 **Premium**
 - Redeem-code system, validated server-side (SHA-256 hashed, never stored in plaintext)
@@ -54,22 +78,30 @@ One codebase runs on iOS, Android, and the web.
 2. **SQL Editor → New query** → paste all of `supabase/schema.sql` → **Run**.
 3. In a new query, paste `supabase/migration-002-plans.sql` → **Run**
    (adds the extra splits and custom-plan support).
-4. **Project Settings → API**: copy the Project URL and `anon` key.
-5. (Recommended, dev only) **Authentication → Sign In / Providers → Email**:
+4. In a new query, paste `supabase/migration-003-features.sql` → **Run**
+   (adds home/gym mode and AI Coach chat history).
+5. **Project Settings → API**: copy the Project URL and `anon` key.
+6. (Recommended, dev only) **Authentication → Sign In / Providers → Email**:
    turn OFF "Confirm email" so sign-ups work instantly.
 
 ### 2. Edge Functions (optional for local dev)
 The core app works with just the schema — food search falls back to the seeded
-database, and the redeem button is the only feature that needs these deployed.
-Install the [Supabase CLI](https://supabase.com/docs/guides/cli), then:
+database, the redeem button and AI Coach chat are the only features that need these
+deployed. Install the [Supabase CLI](https://supabase.com/docs/guides/cli), then:
 
 ```bash
 supabase login
 supabase link --project-ref YOUR_PROJECT_REF
 supabase functions deploy redeem-code
 supabase functions deploy food-search
+supabase functions deploy coach-chat
 # optional — free key from https://fdc.nal.usda.gov/api-key-signup
 supabase secrets set USDA_API_KEY=your_key
+# required for the AI Coach chat — get a key at https://console.anthropic.com
+supabase secrets set ANTHROPIC_API_KEY=your_key
+# optional — defaults to claude-opus-4-8; claude-haiku-4-5 is a cheaper/faster
+# swap if you'd rather not run Opus-tier cost for a lightweight daily coach
+supabase secrets set ANTHROPIC_MODEL=claude-haiku-4-5
 ```
 
 ### 3. App
@@ -88,14 +120,17 @@ npx expo start
 ```
 app/                 expo-router screens
   (auth)/            sign-in, sign-up, onboarding
-  (tabs)/            Today · Nutrition · Workout · Coach Er · Profile
+  (tabs)/            Today · Nutrition · Workout · Coach Er · Progress · Profile
   plan-builder.tsx   custom workout-plan builder
-components/          UI primitives, the Today ring, the Coach Er mascot
-lib/                 supabase client, theme tokens, fitness math, Coach Er rules
+components/          UI primitives, the Today ring, the Coach Er mascot, the
+                     strength-progression chart
+lib/                 supabase client, theme (light/dark), i18n (en/es/zh),
+                     fitness math, Coach Er rules, weekly/today aggregation
 supabase/
   schema.sql                  full database schema + RLS + seed data
   migration-002-plans.sql     extra splits + custom-plan tables
-  functions/                  redeem-code, food-search (Deno Edge Functions)
+  migration-003-features.sql  home/gym mode + AI Coach chat history
+  functions/                  redeem-code, food-search, coach-chat (Deno Edge Functions)
 ```
 
 ## Security notes
@@ -104,10 +139,20 @@ supabase/
 - Redeem codes are stored as SHA-256 hashes and validated inside an Edge Function;
   no code string exists anywhere in this repository or the shipped app.
 - The only keys in the client are the Supabase URL and anon key, which are
-  designed to be public. Secrets like the USDA key live in Edge Function secrets,
-  never in the repo.
+  designed to be public. Secrets like the USDA and Anthropic keys live in Edge
+  Function secrets, never in the repo or the client bundle.
+- Language and theme preferences are stored on-device only (AsyncStorage) — no
+  extra data leaves the app for either feature.
 
+<<<<<<< HEAD
 ## Status
 
 v1 is feature-complete and runs on web, iOS, and Android via Expo. App Store /
 Play Store release is planned. This repository is a portfolio project.
+=======
+
+## Status
+
+This repository is a portfolio project, feature-complete and running on web, iOS,
+and Android via Expo. App Store / Play Store release is planned.
+>>>>>>> ed46622 (Describe what you changed here)

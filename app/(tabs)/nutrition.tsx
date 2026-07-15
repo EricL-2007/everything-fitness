@@ -3,8 +3,9 @@ import { useCallback, useState } from "react";
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import { useSession } from "../_layout";
 import { Button, Card, H1, Input, Label, Pills, Screen } from "../../components/UI";
+import { useT } from "../../lib/i18n";
 import { supabase } from "../../lib/supabase";
-import { colors, type } from "../../lib/theme";
+import { type, useTheme } from "../../lib/theme";
 import { touchStreak, useToday } from "../../lib/useToday";
 
 type Meal = "breakfast" | "lunch" | "dinner" | "snack";
@@ -15,8 +16,10 @@ type FoodResult = {
 
 export default function Nutrition() {
   const { session, refreshProfile } = useSession();
+  const { colors } = useTheme();
+  const { t } = useT();
   const uid = session!.user.id;
-  const t = useToday(uid);
+  const today = useToday(uid);
 
   const [meal, setMeal] = useState<Meal>("lunch");
   const [q, setQ] = useState("");
@@ -38,7 +41,7 @@ export default function Nutrition() {
     setFavorites((f ?? []).map((x: any) => x.foods).filter(Boolean));
   }, [uid]);
 
-  useFocusEffect(useCallback(() => { loadShortcuts(); t.refresh(); }, [loadShortcuts, t.refresh]));
+  useFocusEffect(useCallback(() => { loadShortcuts(); today.refresh(); }, [loadShortcuts, today.refresh]));
 
   const search = async () => {
     if (!q.trim()) return;
@@ -90,7 +93,7 @@ export default function Nutrition() {
     });
     await touchStreak();
     setResults([]); setQ("");
-    await Promise.all([t.refresh(), loadShortcuts(), refreshProfile()]);
+    await Promise.all([today.refresh(), loadShortcuts(), refreshProfile()]);
   };
 
   const favorite = async (foodId: string) => {
@@ -113,31 +116,31 @@ export default function Nutrition() {
       )}
       <Pressable onPress={() => log(f)}
         style={{ backgroundColor: colors.cobaltSoft, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8, marginLeft: 6 }}>
-        <Text style={{ color: colors.cobalt, fontFamily: type.displayMed }}>Log</Text>
+        <Text style={{ color: colors.cobalt, fontFamily: type.displayMed }}>{t("nutrition.logIt")}</Text>
       </Pressable>
     </View>
   );
 
   return (
     <Screen>
-      <H1>Nutrition</H1>
+      <H1>{t("nutrition.title")}</H1>
       <Text style={{ color: colors.steel, marginTop: 4 }}>
-        {Math.round(t.kcal)} kcal logged today
+        {t("nutrition.loggedToday", { n: Math.round(today.kcal) })}
       </Text>
 
-      <Label>Meal</Label>
+      <Label>{t("nutrition.meal")}</Label>
       <Pills options={["breakfast", "lunch", "dinner", "snack"] as const} value={meal} onChange={setMeal}
-        labels={{ breakfast: "Breakfast", lunch: "Lunch", dinner: "Dinner", snack: "Snack" }} />
+        labels={{ breakfast: t("nutrition.breakfast"), lunch: t("nutrition.lunch"), dinner: t("nutrition.dinner"), snack: t("nutrition.snack") }} />
 
-      <Label>Servings</Label>
+      <Label>{t("nutrition.servings")}</Label>
       <Input value={servings} onChangeText={setServings} keyboardType="decimal-pad" style={{ width: 100 }} />
 
-      <Label>Search foods (USDA database)</Label>
+      <Label>{t("nutrition.searchLabel")}</Label>
       <View style={{ flexDirection: "row", gap: 8 }}>
-        <Input value={q} onChangeText={setQ} placeholder="grilled chicken breast" style={{ flex: 1 }}
+        <Input value={q} onChangeText={setQ} placeholder={t("nutrition.searchPlaceholder")} style={{ flex: 1 }}
           onSubmitEditing={search} returnKeyType="search" />
         <Pressable onPress={search} style={{ backgroundColor: colors.cobalt, borderRadius: 12, paddingHorizontal: 16, justifyContent: "center" }}>
-          <Text style={{ color: "#fff", fontFamily: type.displayMed }}>Search</Text>
+          <Text style={{ color: "#fff", fontFamily: type.displayMed }}>{t("nutrition.search")}</Text>
         </Pressable>
       </View>
 
@@ -150,14 +153,14 @@ export default function Nutrition() {
 
       {favorites.length > 0 && (
         <>
-          <Label>★ Favorites</Label>
+          <Label>{t("nutrition.favorites")}</Label>
           <Card>{favorites.map((f) => <FoodRow key={f.id} f={f} />)}</Card>
         </>
       )}
 
       {recents.length > 0 && (
         <>
-          <Label>Recent</Label>
+          <Label>{t("nutrition.recent")}</Label>
           <Card>
             {recents.map((f, i) => (
               <FoodRow key={i} f={{ ...f, serving_desc: "1 serving" }}
@@ -167,14 +170,14 @@ export default function Nutrition() {
         </>
       )}
 
-      <CustomFood uid={uid} onLogged={() => { t.refresh(); loadShortcuts(); }} meal={meal} />
+      <CustomFood uid={uid} onLogged={() => { today.refresh(); loadShortcuts(); }} meal={meal} />
 
       {/* Today's log */}
-      {t.foodLogs.length > 0 && (
+      {today.foodLogs.length > 0 && (
         <>
-          <Label>Logged today</Label>
+          <Label>{t("nutrition.loggedTodayList")}</Label>
           <Card>
-            {t.foodLogs.map((l) => (
+            {today.foodLogs.map((l) => (
               <View key={l.id} style={{ flexDirection: "row", paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.line, alignItems: "center" }}>
                 <View style={{ flex: 1 }}>
                   <Text style={{ color: colors.ink }} numberOfLines={1}>{l.name}</Text>
@@ -184,9 +187,9 @@ export default function Nutrition() {
                 </View>
                 <Pressable onPress={async () => {
                   await supabase.from("food_logs").delete().eq("id", l.id);
-                  t.refresh();
+                  today.refresh();
                 }}>
-                  <Text style={{ color: colors.coral, fontSize: 13 }}>Remove</Text>
+                  <Text style={{ color: colors.coral, fontSize: 13 }}>{t("common.remove")}</Text>
                 </Pressable>
               </View>
             ))}
@@ -199,6 +202,8 @@ export default function Nutrition() {
 
 /** Quick manual entry for foods not in the database. */
 function CustomFood({ uid, meal, onLogged }: { uid: string; meal: Meal; onLogged: () => void }) {
+  const { colors } = useTheme();
+  const { t } = useT();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [kcal, setKcal] = useState(""); const [p, setP] = useState("");
@@ -222,13 +227,13 @@ function CustomFood({ uid, meal, onLogged }: { uid: string; meal: Meal; onLogged
   if (!open) {
     return (
       <Pressable onPress={() => setOpen(true)} style={{ marginTop: 16 }}>
-        <Text style={{ color: colors.cobalt, fontFamily: type.displayMed }}>+ Add a custom food</Text>
+        <Text style={{ color: colors.cobalt, fontFamily: type.displayMed }}>{t("nutrition.addCustom")}</Text>
       </Pressable>
     );
   }
   return (
     <Card style={{ marginTop: 16 }}>
-      <Label>Food name</Label>
+      <Label>{t("nutrition.foodName")}</Label>
       <Input value={name} onChangeText={setName} placeholder="Mom's chicken alfredo" />
       <View style={{ flexDirection: "row", gap: 8 }}>
         {[["kcal", kcal, setKcal], ["P (g)", p, setP], ["C (g)", c, setC], ["F (g)", f, setF]].map(([lab, val, set]: any) => (
@@ -238,7 +243,7 @@ function CustomFood({ uid, meal, onLogged }: { uid: string; meal: Meal; onLogged
           </View>
         ))}
       </View>
-      <Button title="Log it" onPress={save} disabled={!name.trim() || !kcal} />
+      <Button title={t("nutrition.logIt")} onPress={save} disabled={!name.trim() || !kcal} />
     </Card>
   );
 }

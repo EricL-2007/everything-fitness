@@ -3,20 +3,24 @@ import { useMemo, useState } from "react";
 import { Text, View } from "react-native";
 import { useSession } from "../_layout";
 import { Button, Card, H1, Input, Label, Pills, Screen } from "../../components/UI";
+import { useT } from "../../lib/i18n";
 import {
   Activity, computeTargets, ftInToCm, Goal, lbToKg, SPLITS, SplitId,
 } from "../../lib/fitness";
 import { supabase } from "../../lib/supabase";
-import { colors, type } from "../../lib/theme";
+import { type, useTheme } from "../../lib/theme";
 
 const GOALS = ["fat_loss", "maintain", "muscle_gain", "recomp"] as const;
-const GOAL_LABELS = { fat_loss: "Fat loss", maintain: "Maintain", muscle_gain: "Muscle gain", recomp: "Recomp" };
 const ACTIVITIES = ["sedentary", "light", "moderate", "active", "very_active"] as const;
-const ACTIVITY_LABELS = { sedentary: "Sedentary", light: "Light", moderate: "Moderate", active: "Active", very_active: "Very active" };
 
 export default function Onboarding() {
   const { refreshProfile } = useSession();
+  const { colors } = useTheme();
+  const { t } = useT();
   const router = useRouter();
+
+  const GOAL_LABELS = { fat_loss: "Fat loss", maintain: "Maintain", muscle_gain: "Muscle gain", recomp: "Recomp" };
+  const ACTIVITY_LABELS = { sedentary: "Sedentary", light: "Light", moderate: "Moderate", active: "Active", very_active: "Very active" };
 
   const [units, setUnits] = useState<"imperial" | "metric">("imperial");
   const [sex, setSex] = useState<"male" | "female">("male");
@@ -60,25 +64,25 @@ export default function Onboarding() {
   return (
     <Screen>
       <View style={{ marginTop: 32, marginBottom: 16 }}>
-        <H1>Set up your plan</H1>
+        <H1>{t("onboarding.title")}</H1>
         <Text style={{ color: colors.steel, marginTop: 6 }}>
-          Your targets adjust automatically from these numbers. You can change everything later.
+          {t("onboarding.subtitle")}
         </Text>
       </View>
 
       <Card>
-        <Label>Units</Label>
+        <Label>{t("onboarding.units")}</Label>
         <Pills options={["imperial", "metric"] as const} value={units} onChange={setUnits}
           labels={{ imperial: "lb / ft", metric: "kg / cm" }} />
 
-        <Label>Sex (for the calorie formula)</Label>
+        <Label>{t("onboarding.sex")}</Label>
         <Pills options={["male", "female"] as const} value={sex} onChange={setSex}
-          labels={{ male: "Male", female: "Female" }} />
+          labels={{ male: t("onboarding.male"), female: t("onboarding.female") }} />
 
-        <Label>Birth year</Label>
+        <Label>{t("onboarding.birthYear")}</Label>
         <Input value={birthYear} onChangeText={setBirthYear} keyboardType="number-pad" />
 
-        <Label>Height</Label>
+        <Label>{t("onboarding.height")}</Label>
         {units === "imperial" ? (
           <View style={{ flexDirection: "row", gap: 8 }}>
             <Input value={ft} onChangeText={setFt} keyboardType="number-pad" placeholder="ft" style={{ flex: 1 }} />
@@ -88,23 +92,23 @@ export default function Onboarding() {
           <Input value={cm} onChangeText={setCm} keyboardType="number-pad" placeholder="cm" />
         )}
 
-        <Label>Weight ({units === "imperial" ? "lb" : "kg"})</Label>
+        <Label>{t("onboarding.weight")} ({units === "imperial" ? "lb" : "kg"})</Label>
         <Input value={weight} onChangeText={setWeight} keyboardType="decimal-pad" />
 
-        <Label>Activity level</Label>
+        <Label>{t("onboarding.activity")}</Label>
         <Pills options={ACTIVITIES} value={activity} onChange={setActivity} labels={ACTIVITY_LABELS} />
 
-        <Label>Goal</Label>
+        <Label>{t("onboarding.goal")}</Label>
         <Pills options={GOALS} value={goal} onChange={setGoal} labels={GOAL_LABELS} />
 
-        <Label>Workout split</Label>
+        <Label>{t("onboarding.split")}</Label>
         <Pills options={Object.keys(SPLITS) as SplitId[]} value={split} onChange={setSplit}
           labels={Object.fromEntries(Object.entries(SPLITS).map(([k, v]) => [k, v.label])) as any} />
       </Card>
 
       {targets && (
         <Card style={{ marginTop: 16, backgroundColor: colors.cobaltSoft, borderColor: colors.cobaltSoft }}>
-          <Text style={{ fontFamily: type.displayMed, color: colors.ink, fontSize: 15 }}>Your daily targets</Text>
+          <Text style={{ fontFamily: type.displayMed, color: colors.ink, fontSize: 15 }}>{t("onboarding.dailyTargets")}</Text>
           <Text style={{ fontFamily: type.display, fontSize: 26, color: colors.cobalt, marginTop: 4 }}>
             {targets.calories} kcal
           </Text>
@@ -114,7 +118,7 @@ export default function Onboarding() {
         </Card>
       )}
 
-      <Button title={busy ? "Saving…" : "Start logging"} onPress={save} disabled={busy || !targets} />
+      <Button title={busy ? t("onboarding.saving") : t("onboarding.startLogging")} onPress={save} disabled={busy || !targets} />
     </Screen>
   );
 }

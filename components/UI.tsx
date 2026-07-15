@@ -5,9 +5,10 @@ import {
   Pressable, ScrollView, StyleSheet, Text, TextInput, TextInputProps, View, ViewStyle,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { colors, radius, shadow, space, type } from "../lib/theme";
+import { radius, shadow, space, type, useTheme } from "../lib/theme";
 
 export function Screen({ children, scroll = true }: { children: React.ReactNode; scroll?: boolean }) {
+  const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const inner = (
     <View style={{ width: "100%", maxWidth: 560, alignSelf: "center", padding: space(5), paddingTop: insets.top + space(4), paddingBottom: space(24) }}>
@@ -21,23 +22,33 @@ export function Screen({ children, scroll = true }: { children: React.ReactNode;
   );
 }
 
-export const H1 = ({ children }: { children: React.ReactNode }) => (
-  <Text style={{ fontFamily: type.display, fontSize: 28, color: colors.ink, letterSpacing: -0.5 }}>{children}</Text>
-);
+export const H1 = ({ children }: { children: React.ReactNode }) => {
+  const { colors } = useTheme();
+  return (
+    <Text style={{ fontFamily: type.display, fontSize: 28, color: colors.ink, letterSpacing: -0.5 }}>{children}</Text>
+  );
+};
 
-export const Label = ({ children }: { children: React.ReactNode }) => (
-  <Text style={{ color: colors.steel, fontSize: 13, marginBottom: 6, marginTop: space(3) }}>{children}</Text>
-);
+export const Label = ({ children }: { children: React.ReactNode }) => {
+  const { colors } = useTheme();
+  return (
+    <Text style={{ color: colors.steel, fontSize: 13, marginBottom: 6, marginTop: space(3) }}>{children}</Text>
+  );
+};
 
-export const Card = ({ children, style }: { children: React.ReactNode; style?: ViewStyle }) => (
-  <View style={[{ backgroundColor: colors.card, borderRadius: radius.card, padding: space(4), borderWidth: 1, borderColor: colors.line, ...shadow.card }, style]}>
-    {children}
-  </View>
-);
+export const Card = ({ children, style }: { children: React.ReactNode; style?: ViewStyle }) => {
+  const { colors } = useTheme();
+  return (
+    <View style={[{ backgroundColor: colors.card, borderRadius: radius.card, padding: space(4), borderWidth: 1, borderColor: colors.line, ...shadow.card }, style]}>
+      {children}
+    </View>
+  );
+};
 
 export function Button({ title, onPress, kind = "primary", disabled }: {
   title: string; onPress: () => void; kind?: "primary" | "ghost" | "danger"; disabled?: boolean;
 }) {
+  const { colors } = useTheme();
   const bg = kind === "primary" ? colors.cobalt : kind === "danger" ? colors.coral : "transparent";
   const fg = kind === "ghost" ? colors.cobalt : "#fff";
   return (
@@ -55,22 +66,36 @@ export function Button({ title, onPress, kind = "primary", disabled }: {
   );
 }
 
-export const Input = (p: TextInputProps) => (
-  <TextInput placeholderTextColor={colors.steel} {...p} style={[s.input, p.style]} />
-);
+export const Input = (p: TextInputProps) => {
+  const { colors } = useTheme();
+  return (
+    <TextInput
+      placeholderTextColor={colors.steel}
+      {...p}
+      style={[
+        { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line, borderRadius: radius.control, paddingHorizontal: 14, paddingVertical: 12, fontSize: 16, color: colors.ink },
+        p.style,
+      ]}
+    />
+  );
+};
 
 /** Horizontal pill selector, used for goals, splits, meals, units. */
 export function Pills<T extends string>({ options, value, onChange, labels }: {
   options: readonly T[]; value: T; onChange: (v: T) => void; labels?: Partial<Record<T, string>>;
 }) {
+  const { colors } = useTheme();
   return (
     <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
       {options.map((o) => {
         const active = o === value;
         return (
           <Pressable key={o} onPress={() => onChange(o)}
-            style={[s.pill, active && { backgroundColor: colors.ink, borderColor: colors.ink }]}>
-            <Text style={{ color: active ? "#fff" : colors.ink, fontSize: 14 }}>
+            style={[
+              { borderWidth: 1, borderColor: colors.line, backgroundColor: colors.card, borderRadius: radius.pill, paddingHorizontal: 14, paddingVertical: 8 },
+              active && { backgroundColor: colors.ink, borderColor: colors.ink },
+            ]}>
+            <Text style={{ color: active ? colors.paper : colors.ink, fontSize: 14 }}>
               {labels?.[o] ?? o}
             </Text>
           </Pressable>
@@ -84,14 +109,5 @@ const s = StyleSheet.create({
   btn: {
     borderRadius: radius.control, paddingVertical: 14, alignItems: "center",
     justifyContent: "center", marginTop: space(3),
-  },
-  input: {
-    backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line,
-    borderRadius: radius.control, paddingHorizontal: 14, paddingVertical: 12,
-    fontSize: 16, color: colors.ink,
-  },
-  pill: {
-    borderWidth: 1, borderColor: colors.line, backgroundColor: colors.card,
-    borderRadius: radius.pill, paddingHorizontal: 14, paddingVertical: 8,
   },
 });
