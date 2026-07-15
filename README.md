@@ -144,15 +144,7 @@ supabase/
 - Language and theme preferences are stored on-device only (AsyncStorage) — no
   extra data leaves the app for either feature.
 
-<<<<<<< HEAD
-## Status
-
-v1 is feature-complete and runs on web, iOS, and Android via Expo. App Store /
-Play Store release is planned. This repository is a portfolio project.
-=======
-
 ## Status
 
 This repository is a portfolio project, feature-complete and running on web, iOS,
 and Android via Expo. App Store / Play Store release is planned.
->>>>>>> ed46622 (Describe what you changed here)
